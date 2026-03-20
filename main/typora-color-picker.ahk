@@ -33,6 +33,9 @@ ShowHotkeyHelp() {
     helpGui.SetFont("s10", "Segoe UI")
     helpGui.BackColor := "2D2D2D"
 
+    ; 添加拖动功能
+    MakeGuiDraggable(helpGui)
+
     ; 标题
     helpGui.SetFont("s12 Bold cFFFFFF")
     helpGui.AddText("xm ym w280 Center", "🎨 Typora 一键上色")
@@ -87,9 +90,34 @@ ShowHotkeyHelp() {
 
     ; 显示窗口并居中
     helpGui.Show("AutoSize Center")
+    
 
     ; Esc键关闭
     HotIfWinActive("ahk_id " helpGui.Hwnd)
     Hotkey("Escape", (*) => helpGui.Destroy())
     HotIf()
+}
+
+; 使窗口可拖动 - 使用系统拖动方式
+MakeGuiDraggable(gui) {
+    ; 为所有控件添加鼠标事件
+    for ctrl in gui {
+        ctrl.OnEvent("LButtonDown", StartDragSys.Bind(gui))
+    }
+
+    ; 窗口背景也支持拖动
+    OnMessage(0x201, WM_LBUTTONDOWN.Bind(gui))  ; WM_LBUTTONDOWN
+}
+
+; 使用系统方式拖动 - 模拟标题栏拖动
+StartDragSys(gui, ctrl, *) {
+    ; 发送 WM_NCLBUTTONDOWN 消息模拟标题栏拖动
+    PostMessage(0xA1, 2,,, "ahk_id " gui.Hwnd)  ; WM_NCLBUTTONDOWN, HTCAPTION
+}
+
+; 处理窗口消息 - 左键按下
+WM_LBUTTONDOWN(gui, wParam, lParam, msg, hwnd) {
+    if (hwnd = gui.Hwnd) {
+        StartDragSys(gui, "")
+    }
 }
